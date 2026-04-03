@@ -1,0 +1,154 @@
+---
+title: "CI/CD pipelines"
+description: "Using bump in automated pipelines"
+---
+
+bump integrates cleanly into automated pipelines. It exits with code `0` on success and code `1` on error, so you can use its exit status to control pipeline flow.
+
+## Environment variables for CI
+
+Set these environment variables in your pipeline configuration to control bump's behavior without passing flags on every invocation.
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `BUMP_ALWAYS_WRITE` | `bool` | `false` | Automatically applies `-write`, so the version file is updated without passing the flag. |
+| `BUMP_NO_ALPHA_BETA` | `bool` | `false` | Prevents `-alpha` and `-beta` from taking effect, stopping pre-release versions from entering your pipeline history. |
+
+<Note>
+Always use `-write` or set `BUMP_ALWAYS_WRITE=true` in pipelines. Without it, bump prints the new version to stdout but does not save it to the version file.
+</Note>
+
+## GitHub Actions
+
+<Steps>
+  <Step title="Install bump">
+    Use `go install` to pull bump from the module proxy. This works on any runner with Go installed.
+  </Step>
+  <Step title="Bump the version">
+    Run the bump command with `-write` so the version file is updated in the workspace.
+  </Step>
+  <Step title="Commit and push">
+    Commit the updated `VERSION` file back to the branch.
+  </Step>
+</Steps>
+
+```yaml
+name: Bump Version
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bump
+        run: go install github.com/andreimerlescu/bump@latest
+
+      - name: Bump patch version
+        run: bump -patch -write
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: bump version"
+          git push
+```
+
+## GitLab CI
+
+<Tabs>
+  <Tab title="GitHub Actions">
+    See the full example above.
+  </Tab>
+  <Tab title="GitLab CI">
+    ```yaml
+    bump-version:
+      stage: release
+      image: golang:latest
+      script:
+        - go install github.com/andreimerlescu/bump@latest
+        - bump -patch -write
+        - git config user.email "ci@gitlab.com"
+        - git config user.name "GitLab CI"
+        - git add VERSION
+        - git commit -m "chore: bump version"
+        - git push "https://oauth2:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:${CI_COMMIT_BRANCH}
+      only:
+        - main
+    ```
+  </Tab>
+</Tabs>
+
+## Makefile integration
+
+Add bump targets to your `Makefile` to standardize how versions are bumped locally and in CI:
+
+```makefile
+bump-patch:
+	bump -patch -write
+
+bump-minor:
+	bump -minor -write
+
+release:
+	bump -patch -write
+	git add VERSION
+	git commit -m "chore: bump version to $$(bump -check)"
+	git tag $$(bump -check)
+	git push --tags
+```
+
+Run tests before bumping to make sure the release is clean:
+
+```bash
+make test && bump -patch -write
+```
+
+## Scripting with -json
+
+Use `-json` with `jq` to extract the new version string into a shell variable for use in downstream steps:
+
+```bash
+NEW_VERSION=$(bump -patch -json | jq -r '.version')
+echo "New version: $NEW_VERSION"
+```
+
+The JSON output looks like:
+
+```json
+{
+  "major": 1,
+  "minor": 2,
+  "patch": 4,
+  "alpha": 0,
+  "beta": 0,
+  "rc": 0,
+  "preview": 0,
+  "version": "v1.2.4"
+}
+```
+
+When used with `-check -json`, only the `version` field is included: `{"version": "v1.2.4"}`.
+
+<Note>
+`-json` controls the output format only. The version file is still written as plain text when `-write` is used.
+</Note>
+
+## Checking exit codes
+
+bump exits `1` on any error — an unrecognized version format, a missing file, or conflicting flags. Check the exit code in scripts to catch failures early:
+
+```bash
+bump -patch -write
+if [ $? -ne 0 ]; then
+  echo "bump failed — aborting release"
+  exit 1
+fi
+```
+
+In most shells and CI systems, using `set -e` at the top of your script achieves the same effect automatically.

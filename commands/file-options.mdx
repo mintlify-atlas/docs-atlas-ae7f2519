@@ -1,0 +1,166 @@
+---
+title: "File Options"
+description: "Flags that control how bump reads, writes, and initializes version files."
+---
+
+These flags control which file `bump` reads from, whether changes are persisted, and how to handle missing or malformed version strings.
+
+## Flags
+
+<ParamField path="-in" type="string" default="VERSION">
+  Path to the input file. Defaults to `./VERSION` in the current working directory.
+
+  `bump` can intelligently read and write version strings from several file types beyond a plain `VERSION` file:
+
+  | File | How the version is located |
+  |---|---|
+  | `VERSION` | Full file contents are replaced |
+  | `package.json` | The `"version"` key is updated |
+  | `pom.xml` | The `<version>` tag under `<project>` is updated |
+  | `Chart.yaml` | The `version:` key is updated |
+  | `Dockerfile` | The `LABEL version=` or `LABEL org.label-schema.version=` is updated |
+  | `go.mod` | The `go X.Y[.Z]` line is updated |
+
+  ```bash
+  bump -patch -in package.json -write
+  # Bumped v1.0.2 → v1.0.3 (saved to package.json)
+  ```
+
+  <Tip>
+    Set the `BUMP_DEFAULT_INPUT` environment variable to change the default input path without passing `-in` on every invocation.
+  </Tip>
+</ParamField>
+
+<ParamField path="-write" type="bool" default="false">
+  Write the bumped version back to the input file. Without this flag, `bump` operates as a **dry-run** — it prints the new version to stdout but makes no changes on disk.
+
+  ```bash
+  # Dry-run: prints result, does not modify file
+  bump -patch
+  # Bumped v1.0.2 → v1.0.3
+
+  # With -write: prints result and saves to file
+  bump -patch -write
+  # Bumped v1.0.2 → v1.0.3 (saved to VERSION)
+  ```
+
+  <Tip>
+    Set `BUMP_ALWAYS_WRITE=true` to make `-write` the default behavior in your environment.
+  </Tip>
+</ParamField>
+
+<ParamField path="-check" type="bool" default="false">
+  Print the current version from the input file and exit with code `0`. No bump is performed.
+
+  ```bash
+  bump -check
+  # v1.0.2
+
+  bump -check -in package.json
+  # v2.3.1
+  ```
+
+  This is useful in CI pipelines where you need to read the current version without modifying anything. Exit code `1` indicates the file could not be read or parsed.
+</ParamField>
+
+<ParamField path="-fix" type="bool" default="false">
+  Attempt to fix a malformed version string before parsing or bumping. Common corrections include adding the `v` prefix and expanding shorthand formats.
+
+  ```bash
+  # Version file contains "1.25" (malformed)
+  bump -fix -write
+  # Fixed and saved version v1.25.0 to VERSION
+  ```
+
+  | Input | Fixed output |
+  |---|---|
+  | `1.25` | `v1.25.0` |
+  | `1.2.3` | `v1.2.3` |
+
+  If `-fix` is not passed but the version could be fixed, `bump` prints a hint:
+
+  ```
+  Hint: the version string may be fixable with the -fix flag.
+  ```
+
+  <Warning>
+    `BUMP_ALWAYS_FIX=true` and `BUMP_NEVER_FIX=true` cannot be set at the same time — bump will exit with an error if both are active.
+  </Warning>
+</ParamField>
+
+<ParamField path="-init" type="bool" default="false">
+  Initialize the input file if it does not exist. When the file is missing and `-init` is passed (or `BUMP_INIT_ON_NOT_FOUND=true` is set), bump creates the file with a default version of `v0.0.0-beta.1`.
+
+  ```bash
+  bump -init
+  # Initialized v0.0.0-beta.1
+
+  bump -init -write
+  # Initialized v0.0.0-beta.1 (saved to VERSION)
+  ```
+
+  Use `-parse` with `-init` to seed the file with a specific starting version instead of the default:
+
+  ```bash
+  bump -init -parse v1.0.0 -write
+  # Initialized v1.0.0 (saved to VERSION)
+  ```
+
+  <Note>
+    `-init` only takes effect when the target `-in` file ends in `VERSION` and the file does not already exist.
+  </Note>
+</ParamField>
+
+<ParamField path="-parse" type="string" default="">
+  Use the provided string as the version input instead of reading the input file. The value overrides whatever is in the file on disk.
+
+  ```bash
+  bump -parse v2.0.0 -patch
+  # Bumped v2.0.0 → v2.0.1
+  ```
+
+  When used with `-write`, the result is saved to the `-in` file:
+
+  ```bash
+  bump -parse v2.0.0 -patch -write
+  # Bumped v2.0.0 → v2.0.1 (saved to VERSION)
+  ```
+
+  When used alone without a bump flag, `-parse` sets the file content directly:
+
+  ```bash
+  bump -parse v3.0.0 -write
+  # Parsed v3.0.0 (saved to VERSION)
+  ```
+</ParamField>
+
+---
+
+## Workflow example
+
+<Steps>
+  <Step title="Check the current version">
+    ```bash
+    bump -check
+    # v1.0.2
+    ```
+  </Step>
+  <Step title="Preview the bump (dry-run)">
+    ```bash
+    bump -patch
+    # Bumped v1.0.2 → v1.0.3
+    ```
+  </Step>
+  <Step title="Apply the bump and save">
+    ```bash
+    bump -patch -write
+    # Bumped v1.0.2 → v1.0.3 (saved to VERSION)
+    ```
+  </Step>
+  <Step title="Confirm the saved version">
+    ```bash
+    bump -check
+    # v1.0.3
+    ```
+  </Step>
+</Steps>

@@ -1,0 +1,209 @@
+---
+title: "Bump methods"
+description: "Methods for incrementing version components."
+---
+
+Each bump method increments a single version component and resets lower-precedence components to zero. All methods are concurrency-safe.
+
+<Note>
+  Alpha and Beta can be combined. Calling `BumpBeta()` then `BumpAlpha()` produces `v1.2.3-beta.1-alpha.1` (FormE).
+</Note>
+
+---
+
+## `(*Version).BumpMajor()`
+
+```go
+func (v *Version) BumpMajor()
+```
+
+Increments `Major` by 1 and resets `Minor`, `Patch`, `RC`, `Alpha`, `Beta`, and `Preview` to `0`.
+
+| Component | Action      |
+|-----------|-------------|
+| Major     | `+1`        |
+| Minor     | reset to `0` |
+| Patch     | reset to `0` |
+| RC        | reset to `0` |
+| Alpha     | reset to `0` |
+| Beta      | reset to `0` |
+| Preview   | reset to `0` |
+
+```go
+v, _ := bump.Parse("v1.2.3-beta.1")
+v.BumpMajor()
+fmt.Println(v.String()) // v2.0.0
+```
+
+---
+
+## `(*Version).BumpMinor()`
+
+```go
+func (v *Version) BumpMinor()
+```
+
+Increments `Minor` by 1 and resets `Patch`, `RC`, `Alpha`, `Beta`, and `Preview` to `0`.
+
+| Component | Action      |
+|-----------|-------------|
+| Minor     | `+1`        |
+| Patch     | reset to `0` |
+| RC        | reset to `0` |
+| Alpha     | reset to `0` |
+| Beta      | reset to `0` |
+| Preview   | reset to `0` |
+
+```go
+v, _ := bump.Parse("v1.2.3")
+v.BumpMinor()
+fmt.Println(v.String()) // v1.3.0
+```
+
+---
+
+## `(*Version).BumpPatch()`
+
+```go
+func (v *Version) BumpPatch()
+```
+
+Increments `Patch` by 1 and resets `RC`, `Alpha`, `Beta`, and `Preview` to `0`. Sets the format to FormA (`v%d.%d.%d`) unless the version uses the no-prefix FormG.
+
+| Component | Action      |
+|-----------|-------------|
+| Patch     | `+1`        |
+| RC        | reset to `0` |
+| Alpha     | reset to `0` |
+| Beta      | reset to `0` |
+| Preview   | reset to `0` |
+
+```go
+v, _ := bump.Parse("v1.2.3-rc.1")
+v.BumpPatch()
+fmt.Println(v.String()) // v1.2.4
+```
+
+---
+
+## `(*Version).BumpRC()`
+
+```go
+func (v *Version) BumpRC()
+```
+
+Increments `RC` by 1 and resets `Alpha`, `Beta`, and `Preview` to `0`. Sets the format to FormD (`v%d.%d.%d-rc.%d`).
+
+| Component | Action      |
+|-----------|-------------|
+| RC        | `+1`        |
+| Alpha     | reset to `0` |
+| Beta      | reset to `0` |
+| Preview   | reset to `0` |
+
+```go
+v, _ := bump.Parse("v1.2.3")
+v.BumpRC()
+fmt.Println(v.String()) // v1.2.3-rc.1
+```
+
+---
+
+## `(*Version).BumpAlpha()`
+
+```go
+func (v *Version) BumpAlpha()
+```
+
+Increments `Alpha` by 1. The resulting format depends on whether a beta was already set:
+
+| Existing state     | Output format                        |
+|--------------------|--------------------------------------|
+| No beta set        | `v1.2.3-alpha.1` (alpha only)        |
+| Beta already set   | `v1.2.3-beta.N-alpha.M` (combined)   |
+
+```go
+v, _ := bump.Parse("v1.2.3")
+v.BumpAlpha()
+fmt.Println(v.String()) // v1.2.3-alpha.1
+```
+
+```go
+v, _ := bump.Parse("v1.2.3-beta.2")
+v.BumpAlpha()
+fmt.Println(v.String()) // v1.2.3-beta.2-alpha.1
+```
+
+---
+
+## `(*Version).BumpBeta()`
+
+```go
+func (v *Version) BumpBeta()
+```
+
+Increments `Beta` by 1.
+
+<Note>
+  After calling `BumpBeta()`, you can call `BumpAlpha()` to produce the combined `v1.2.3-beta.N-alpha.M` format.
+</Note>
+
+```go
+v, _ := bump.Parse("v1.2.3")
+v.BumpBeta()
+fmt.Println(v.String()) // v1.2.3-beta.1
+```
+
+---
+
+## `(*Version).BumpPreview()`
+
+```go
+func (v *Version) BumpPreview()
+```
+
+Increments `Preview` by 1 and resets `Patch`, `Alpha`, `Beta`, and `RC` to `0`. Sets the format to FormF (`v%d.%d.%d-preview.%d`).
+
+| Component | Action      |
+|-----------|-------------|
+| Preview   | `+1`        |
+| Patch     | reset to `0` |
+| Alpha     | reset to `0` |
+| Beta      | reset to `0` |
+| RC        | reset to `0` |
+
+```go
+v, _ := bump.Parse("v1.2.3")
+v.BumpPreview()
+fmt.Println(v.String()) // v1.2.3-preview.1
+```
+
+---
+
+## `(*Version).Fix()`
+
+```go
+func (v *Version) Fix() error
+```
+
+Attempts to correct malformed raw version content. Useful when a version file contains a bare number without the `v` prefix, or is incomplete.
+
+| Input content | Fixed output |
+|---------------|--------------|
+| `""` (empty)  | `v0.0.1`     |
+| `1.2.3`       | `v1.2.3`     |
+| `1.25`        | `v1.25.0`    |
+| Already valid | Parsed as-is |
+
+<ResponseField name="error" type="error">
+  Non-nil if the content cannot be fixed or parsed after correction.
+</ResponseField>
+
+```go
+v := bump.New()
+v.SetRaw([]byte("1.25"))
+if err := v.Fix(); err != nil {
+    log.Fatal(err)
+}
+fmt.Println(v.String()) // v1.25.0
+```

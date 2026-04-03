@@ -1,0 +1,132 @@
+---
+title: "Output Flags"
+description: "Flags that control informational output: binary version, environment state, and JSON-encoded results."
+---
+
+These flags produce informational output about the `bump` binary itself or the current runtime environment. They can also change the output format of a bump operation.
+
+## Flags
+
+<ParamField path="-v" type="bool" default="false">
+  Print the version of the `bump` binary itself and exit.
+
+  ```bash
+  bump -v
+  # v1.0.6
+  ```
+</ParamField>
+
+<ParamField path="-about" type="bool" default="false">
+  Print a full usage summary including supported file types, default values, and all active environment variable settings, then exit.
+
+  ```bash
+  bump -about
+  ```
+
+  ```
+  Bump Version: v1.0.6
+  Usage:
+    bump -check [-in=FILE]
+    bump -fix [-write] [-in=FILE]
+    bump -[major|minor|patch|alpha|beta|rc|preview] [-write] [-in=FILE] [-json]
+  Supported File Types:
+    VERSION
+    package.json
+    pom.xml
+    Chart.yaml
+    Dockerfile
+    go.mod
+  Defaults:
+    -in=VERSION [default: VERSION]
+  Environment Variables:
+    BUMP_NO_PREVIEW=false
+    BUMP_INIT_ON_NOT_FOUND=false
+    BUMP_DEFAULT_INPUT=VERSION
+    BUMP_NO_ALPHA=false
+    BUMP_NO_BETA=false
+    BUMP_NO_RC=false
+    BUMP_ALWAYS_FIX=false
+    BUMP_ALWAYS_WRITE=false
+    BUMP_NEVER_FIX=false
+    BUMP_NO_ALPHA_BETA=false
+  ```
+</ParamField>
+
+<ParamField path="-env" type="bool" default="false">
+  Print the current values of all `bump` environment variables and exit. Useful for verifying which settings are active in the current shell.
+
+  ```bash
+  bump -env
+  ```
+
+  ```
+  BUMP_NO_PREVIEW=false
+  BUMP_ALWAYS_FIX=false
+  BUMP_DEFAULT_INPUT=VERSION
+  BUMP_NO_ALPHA=false
+  BUMP_NO_BETA=false
+  BUMP_NO_ALPHA_BETA=false
+  BUMP_NO_RC=false
+  BUMP_INIT_ON_NOT_FOUND=false
+  BUMP_ALWAYS_WRITE=false
+  BUMP_NEVER_FIX=false
+  ```
+
+  See the [Environment Variables](/configuration/environment-variables) reference for the full list of supported variables and their effects.
+</ParamField>
+
+<ParamField path="-json" type="bool" default="false">
+  Output the result as a JSON object instead of a human-readable string. All version components are included in the output.
+
+  ```bash
+  bump -patch -json
+  ```
+
+  ```json
+  {
+    "major": 1,
+    "minor": 0,
+    "patch": 3,
+    "alpha": 0,
+    "beta": 0,
+    "rc": 0,
+    "preview": 0,
+    "version": "v1.0.3"
+  }
+  ```
+
+  When used with `-check`, `-json` outputs only the `version` field:
+
+  ```bash
+  bump -check -json
+  ```
+
+  ```json
+  {
+    "version": "v1.0.3"
+  }
+  ```
+
+  <Note>
+    `-json` controls the **output format only**. When combined with `-write`, `bump` still writes the version as **plain text** to the input file — not as JSON.
+  </Note>
+</ParamField>
+
+---
+
+## Environment variable reference
+
+The flags `-about` and `-env` both display environment variable state. These variables can override default flag behavior at the shell level:
+
+| Variable | Type | Default | Effect |
+|---|---|---|---|
+| `BUMP_ALWAYS_WRITE` | bool | `false` | Activates `-write` automatically |
+| `BUMP_DEFAULT_INPUT` | string | `VERSION` | Sets the default `-in` file path |
+| `BUMP_NO_ALPHA` | bool | `false` | Disables `-alpha` |
+| `BUMP_NO_BETA` | bool | `false` | Disables `-beta` |
+| `BUMP_NO_ALPHA_BETA` | bool | `false` | Disables both `-alpha` and `-beta` |
+| `BUMP_NO_RC` | bool | `false` | Disables `-rc` |
+| `BUMP_NO_PREVIEW` | bool | `false` | Disables `-preview` |
+| `BUMP_ALWAYS_FIX` | bool | `false` | Activates `-fix` automatically |
+| `BUMP_NEVER_FIX` | bool | `false` | Prevents `-fix` from running |
+| `BUMP_INIT_ON_NOT_FOUND` | bool | `false` | Activates `-init` when file is missing |

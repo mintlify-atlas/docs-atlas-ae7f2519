@@ -1,0 +1,151 @@
+---
+title: "Bump Operations"
+description: "Core version bump flags for incrementing major, minor, patch, and pre-release components."
+---
+
+Use these flags to tell `bump` which part of the version to increment. By default, bump operations are **dry-run** — no file is modified unless you also pass `-write`.
+
+## Version component flags
+
+<ParamField path="-major" type="bool" default="false">
+  Increments the **major** version component and resets minor, patch, rc, alpha, beta, and preview to `0`.
+
+  ```bash
+  bump -major
+  # Bumped v1.4.7 → v2.0.0
+  ```
+</ParamField>
+
+<ParamField path="-minor" type="bool" default="false">
+  Increments the **minor** version component and resets patch, rc, alpha, beta, and preview to `0`.
+
+  ```bash
+  bump -minor
+  # Bumped v1.4.7 → v1.5.0
+  ```
+</ParamField>
+
+<ParamField path="-patch" type="bool" default="false">
+  Increments the **patch** version component and resets rc, alpha, beta, and preview to `0`.
+
+  ```bash
+  bump -patch
+  # Bumped v1.0.2 → v1.0.3
+  ```
+</ParamField>
+
+<ParamField path="-alpha" type="bool" default="false">
+  Increments the **alpha** pre-release component. Does not reset other components.
+
+  ```bash
+  bump -alpha
+  # Bumped v1.0.3-alpha.1 → v1.0.3-alpha.2
+  ```
+
+  <Note>
+    Disabled when `BUMP_NO_ALPHA=true` or `BUMP_NO_ALPHA_BETA=true` is set in the environment.
+  </Note>
+</ParamField>
+
+<ParamField path="-beta" type="bool" default="false">
+  Increments the **beta** pre-release component. Does not reset other components.
+
+  ```bash
+  bump -beta
+  # Bumped v1.0.3-beta.1 → v1.0.3-beta.2
+  ```
+
+  <Note>
+    Disabled when `BUMP_NO_BETA=true` or `BUMP_NO_ALPHA_BETA=true` is set in the environment.
+  </Note>
+</ParamField>
+
+<ParamField path="-rc" type="bool" default="false">
+  Increments the **release candidate** component and resets alpha, beta, and preview to `0`.
+
+  ```bash
+  bump -rc
+  # Bumped v1.0.3-rc.1 → v1.0.3-rc.2
+  ```
+
+  <Note>
+    Disabled when `BUMP_NO_RC=true` is set in the environment.
+  </Note>
+</ParamField>
+
+<ParamField path="-preview" type="bool" default="false">
+  Increments the **preview** component and resets patch, alpha, beta, and rc to `0`.
+
+  ```bash
+  bump -preview
+  # Bumped v1.0.3-preview.1 → v1.0.3-preview.2
+  ```
+
+  <Note>
+    Disabled when `BUMP_NO_PREVIEW=true` is set in the environment.
+  </Note>
+</ParamField>
+
+---
+
+## Combination rules
+
+### Major, minor, and patch are mutually exclusive
+
+Only one of `-major`, `-minor`, or `-patch` may be used in a single invocation. Combining them is an error:
+
+```bash
+bump -major -minor
+# Error: only one of -major, -minor, or -patch can be used at a time
+```
+
+### Pre-release flags with major, minor, or patch
+
+Pre-release flags (`-alpha`, `-beta`, `-rc`, `-preview`) can be combined with `-major`, `-minor`, or `-patch` in one command:
+
+| Command | Before | After |
+|---|---|---|
+| `bump -patch -rc` | `v1.0.2` | `v1.0.3-rc.1` |
+| `bump -minor -beta` | `v1.0.3-rc.1` | `v1.1.0-beta.1` |
+| `bump -major -alpha` | `v1.1.0-beta.1` | `v2.0.0-alpha.1` |
+
+### Alpha and beta can be combined
+
+`-alpha` and `-beta` are the **only** two pre-release flags that may be used together. This produces the combined `beta.N-alpha.N` version format:
+
+```bash
+bump -alpha -beta
+# Bumped v1.0.3-beta.2 → v1.0.3-beta.3-alpha.1
+```
+
+<Warning>
+  All other pre-release flag combinations (e.g., `-alpha -rc`, `-beta -preview`) are invalid and will produce an error. Set `BUMP_NO_ALPHA_BETA=true` to disable the combined alpha/beta format entirely.
+</Warning>
+
+---
+
+## Version format reference
+
+`bump` supports the following output formats, resolved from most specific to least specific:
+
+| Format | Example |
+|---|---|
+| Beta with Alpha | `v1.2.3-beta.4-alpha.5` |
+| Alpha only | `v1.2.3-alpha.1` |
+| Beta only | `v1.2.3-beta.2` |
+| Release candidate | `v1.2.3-rc.1` |
+| Preview | `v1.2.3-preview.7` |
+| Standard SemVer | `v1.2.3` |
+
+---
+
+## Saving changes
+
+All bump operations are **dry-run by default** — they print the new version but do not write it to disk. Add `-write` to persist the result:
+
+```bash
+bump -patch -write
+# Bumped v1.0.2 → v1.0.3 (saved to VERSION)
+```
+
+See [File Options](/commands/file-options) for more details on the `-write` flag and supported file types.

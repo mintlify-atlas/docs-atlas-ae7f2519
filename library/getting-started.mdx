@@ -1,0 +1,158 @@
+---
+title: "Getting started with the Go library"
+description: Step-by-step guide to using bump in your Go program
+---
+
+This guide walks you through the most common ways to use the `bump` package in your own Go programs.
+
+## Prerequisites
+
+Go 1.24 or later is required.
+
+## Install the package
+
+<Steps>
+
+<Step title="Add the dependency">
+
+Run the following command in your module root:
+
+```bash
+go get github.com/andreimerlescu/bump@latest
+```
+
+</Step>
+
+<Step title="Import the package">
+
+```go
+import "github.com/andreimerlescu/bump/bump"
+```
+
+</Step>
+
+</Steps>
+
+## Parse and bump a version string
+
+The quickest way to get started is to parse a version string directly with `bump.Parse`, modify it, then print the result.
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "path/filepath"
+    "os"
+
+    "github.com/andreimerlescu/bump/bump"
+)
+
+func main() {
+    // Parse a version string directly
+    v, err := bump.Parse("v1.2.3")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Bump the patch version
+    v.BumpPatch()
+
+    // Print the new version
+    fmt.Println(v.String()) // Output: v1.2.4
+}
+```
+
+## Load a version from a file
+
+Use `LoadFile` to read the contents of a `VERSION` file, then call `Parse` to populate the struct's fields before bumping.
+
+```go
+v := bump.New()
+err := v.LoadFile(filepath.Join(".", "VERSION"))
+if err != nil {
+    log.Fatal(err)
+}
+if err := v.Parse(); err != nil {
+    log.Fatal(err)
+}
+v.BumpMinor()
+fmt.Println(v.String()) // e.g., v1.3.0
+```
+
+<Tip>
+`ParseFile` combines `LoadFile` and `Parse` into a single call: `v.ParseFile("VERSION")`.
+</Tip>
+
+## Create a new version file
+
+`bump.Create` parses a version string, writes it to the given path, and returns the populated `*Version`. Use this to bootstrap a `VERSION` file in a new project.
+
+```go
+// Creates the file and writes the version
+v, err := bump.Create("v1.0.0", filepath.Join(os.TempDir(), "VERSION"))
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(v.String()) // v1.0.0
+```
+
+## Save changes back to a file
+
+After bumping, call `Save` with the file path to persist the new version. `Save` automatically detects the file format from the filename and writes accordingly.
+
+```go
+v := bump.New()
+_ = v.LoadFile("VERSION")
+_ = v.Parse()
+v.BumpPatch()
+if err := v.Save("VERSION"); err != nil {
+    log.Fatal(err)
+}
+```
+
+<Note>
+`Save` supports `VERSION`, `package.json`, `Chart.yaml`, `Dockerfile`, `go.mod`, and `pom.xml`. The correct format is chosen automatically based on the filename.
+</Note>
+
+## Compare two versions
+
+`Compare` returns `1`, `0`, or `-1` to indicate whether the receiver is greater than, equal to, or less than the argument. Stable releases rank above pre-releases at the same major/minor/patch level.
+
+```go
+v1, _ := bump.Parse("v1.0.0")
+v2, _ := bump.Parse("v1.0.0-alpha.1")
+
+result := v1.Compare(v2)
+// result == 1 means v1 > v2 (stable > pre-release)
+// result == -1 means v1 < v2
+// result == 0 means equal
+```
+
+## Control the version prefix
+
+`Format` lets you choose whether to include the leading `v`. This is useful when writing to files that expect bare semver, such as `package.json`.
+
+```go
+v, _ := bump.Parse("v1.2.3")
+fmt.Println(v.Format(true))  // v1.2.3
+fmt.Println(v.Format(false)) // 1.2.3 (for package.json)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Constructors" icon="hammer" href="/library/api/new-parse-create">
+    Full reference for `New`, `Parse`, and `Create`.
+  </Card>
+  <Card title="Bump methods" icon="arrow-up" href="/library/api/bump-methods">
+    All seven bump methods and their reset behavior.
+  </Card>
+  <Card title="Formatting & saving" icon="floppy-disk" href="/library/api/format-save">
+    `Format`, `String`, `Raw`, and `Save` in detail.
+  </Card>
+  <Card title="Version struct" icon="brackets-curly" href="/library/api/version-struct">
+    Fields, locking, and the `Compare` method.
+  </Card>
+</CardGroup>

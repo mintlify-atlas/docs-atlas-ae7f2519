@@ -1,0 +1,89 @@
+---
+title: "Version formats"
+description: "Understanding the version formats supported by bump"
+---
+
+bump can parse and produce a wide range of version string formats. Understanding which format your version file uses helps you predict exactly how a bump operation will change it.
+
+## SemVer basics
+
+Most bump formats are based on Semantic Versioning: `MAJOR.MINOR.PATCH`.
+
+- **MAJOR** — incompatible API changes
+- **MINOR** — backward-compatible new functionality
+- **PATCH** — backward-compatible bug fixes
+
+Pre-release identifiers (`-alpha`, `-beta`, `-rc`, `-preview`) are appended after the patch component.
+
+## Supported formats
+
+| Form | Example | Description |
+|---|---|---|
+| FormE | `v1.2.3-beta.4-alpha.5` | Beta with alpha — most complex pre-release |
+| FormB | `v1.2.3-alpha.1` | Alpha pre-release |
+| FormC | `v1.2.3-beta.2` | Beta pre-release |
+| FormD | `v1.2.3-rc.1` | Release candidate |
+| FormF | `v1.2.3-preview.7` | Preview pre-release |
+| FormA | `v1.2.3` | Standard SemVer with `v` prefix |
+| FormG | `1.2.3` | Standard SemVer without prefix |
+| FormH | `1.24` | Two-part shorthand (used in `go.mod`) |
+| FormI | `v1` | Major-only with prefix |
+| FormJ | `v1.0` | Two-part with prefix |
+
+## Format detection order
+
+bump checks formats from most complex to least complex. This prevents a detailed pre-release string from being misidentified as a simpler format.
+
+The detection priority is:
+
+1. `v1.2.3-beta.4-alpha.5` (FormE — beta with alpha)
+2. `v1.2.3-alpha.1` (FormB — alpha)
+3. `v1.2.3-beta.2` (FormC — beta)
+4. `v1.2.3-rc.1` (FormD — release candidate)
+5. `v1.2.3-preview.7` (FormF — preview)
+6. `v1.2.3` (FormA — standard with prefix)
+7. `1.2.3` (FormG — standard without prefix)
+8. `1.24` (FormH — two-part)
+9. `v1.0` (FormJ — two-part with prefix)
+10. `v1` (FormI — major only)
+
+For example, without this ordering, `v1.2.3-beta.4-alpha.5` could match FormC (beta) after scanning only the beta portion, leaving the alpha suffix unrecognized.
+
+## What bumping resets
+
+Each bump operation zeroes out the components below it in the version hierarchy.
+
+| Bump | Resets |
+|---|---|
+| `-major` | minor, patch, rc, alpha, beta, preview → all `0` |
+| `-minor` | patch, rc, alpha, beta, preview → all `0` |
+| `-patch` | rc, alpha, beta, preview → all `0` |
+| `-rc` | alpha, beta, preview → all `0` |
+
+Pre-release bumps (`-alpha`, `-beta`, `-preview`) increment only their own counter and do not reset other components.
+
+### Examples
+
+```bash
+# Starting from v1.2.3-beta.2
+bump -major   # → v2.0.0
+bump -minor   # → v1.3.0
+bump -patch   # → v1.2.4
+bump -beta    # → v1.2.3-beta.3
+bump -rc      # → v1.2.3-rc.1  (resets beta)
+```
+
+## The v-prefix and file types
+
+Whether bump uses a `v` prefix depends on the version file:
+
+- **`VERSION`** — uses the `v` prefix (`v1.2.3`)
+- **`package.json`** — no `v` prefix (`1.2.3`)
+- **`go.mod`** — no `v` prefix; two-part format (`1.24`)
+- **`pom.xml`**, **`Chart.yaml`**, **`Dockerfile`** — follow the existing format in the file
+
+bump detects the format from the file's current content and writes back in the same style. If you start with `1.2.3` in `package.json`, you will get `1.2.4` after a patch bump, not `v1.2.4`.
+
+<Tip>
+Run `bump -check` to see what bump reads from your version file without making any changes.
+</Tip>

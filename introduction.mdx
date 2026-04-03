@@ -1,0 +1,55 @@
+---
+title: "Introduction"
+description: "A fast, reliable CLI tool for incrementing semantic version strings from the command line."
+---
+
+Bump is a command-line tool that reads a version string from a file, increments the component you specify, and optionally writes the result back. No shell scripting, no `sed` one-liners — just a single command that does exactly what you expect.
+
+It works with the files you already use: `VERSION`, `package.json`, `go.mod`, `Dockerfile`, `Chart.yaml`, and `pom.xml`. Drop it into any CI/CD pipeline and rely on exit codes to signal success or failure.
+
+## Version format priority
+
+Bump can parse multiple version formats. To avoid misidentifying a complex pre-release version as a simpler one, it checks formats in order from most specific to least specific.
+
+| Priority | Format | Description |
+|----------|--------|-------------|
+| 1 | `v1.2.3-beta.4-alpha.5` | Beta with Alpha |
+| 2 | `v1.2.3-alpha.1` | Alpha |
+| 3 | `v1.2.3-beta.2` | Beta |
+| 4 | `v1.2.3-rc.1` | Release Candidate |
+| 5 | `v1.2.3-preview.7` | Preview |
+| 6 | `v1.2.3` | Standard |
+
+This ordering ensures that a version like `v1.2.3-beta.4-alpha.5` is never incorrectly matched as a plain beta or a standard semver.
+
+## Supported file types
+
+Bump intelligently locates and updates the version field in each supported file type:
+
+| File | How the version is updated |
+|------|---------------------------|
+| `VERSION` | Full file contents replaced |
+| `package.json` | `"version"` key replaced |
+| `pom.xml` | `<version>` element replaced |
+| `Chart.yaml` | `version` key replaced |
+| `Dockerfile` | `version` label replaced |
+| `go.mod` | Go version line (line 3) replaced |
+
+Pass any of these files to the `-in` flag. Bump detects the file type by name and applies the correct update strategy automatically.
+
+## Key design decisions
+
+**Safe by default.** Every bump command is a dry run unless you pass `-write`. You always see the result before it is saved.
+
+**Pipeline-friendly.** Bump exits with code `0` on success and `1` on error, making it straightforward to use in Makefiles, GitHub Actions, and shell scripts. Use `-json` to get machine-readable output.
+
+**Environment-controlled.** You can disable specific bump types (alpha, beta, rc, preview) or set a default input file using environment variables — no flags needed in recurring workflows.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install via `go install` or download a pre-built binary for macOS, Linux, or Windows.
+  </Card>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Run your first version bump in under a minute.
+  </Card>
+</CardGroup>

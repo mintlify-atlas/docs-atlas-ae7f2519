@@ -1,0 +1,170 @@
+---
+title: "Version struct"
+description: "The core Version type and its exported fields."
+---
+
+`Version` is the central type in the `bump` package. It holds parsed version components, internal concurrency state, and rendering metadata.
+
+## Type definition
+
+```go
+type Version struct {
+    Major   int    `json:"major"`
+    Minor   int    `json:"minor"`
+    Patch   int    `json:"patch"`
+    Alpha   int    `json:"alpha"`
+    Beta    int    `json:"beta"`
+    RC      int    `json:"rc"`
+    Preview int    `json:"preview"`
+    Version string `json:"version"`
+}
+```
+
+Internal fields (`mu`, `parsed`, `path`, `raw`, `noPrefix`, `useForm`) are unexported. Use the constructor functions and methods to interact with them.
+
+## Exported fields
+
+<ResponseField name="Major" type="int">
+  The major version number — the `X` in `X.Y.Z`. Incremented by `BumpMajor()`, which resets all other components to zero.
+</ResponseField>
+
+<ResponseField name="Minor" type="int">
+  The minor version number — the `Y` in `X.Y.Z`. Incremented by `BumpMinor()`, which resets Patch and all pre-release components to zero.
+</ResponseField>
+
+<ResponseField name="Patch" type="int">
+  The patch version number — the `Z` in `X.Y.Z`. Incremented by `BumpPatch()`, which resets all pre-release components to zero.
+</ResponseField>
+
+<ResponseField name="Alpha" type="int">
+  The alpha pre-release counter. `0` means this is not an alpha release. Set by `BumpAlpha()`. Can be combined with `Beta` to produce `v1.2.3-beta.N-alpha.M`.
+</ResponseField>
+
+<ResponseField name="Beta" type="int">
+  The beta pre-release counter. `0` means this is not a beta release. Set by `BumpBeta()`.
+</ResponseField>
+
+<ResponseField name="RC" type="int">
+  The release candidate counter. `0` means this is not a release candidate. Set by `BumpRC()`.
+</ResponseField>
+
+<ResponseField name="Preview" type="int">
+  The preview counter. `0` means this is not a preview release. Set by `BumpPreview()`, which also resets Patch, Alpha, Beta, and RC to zero.
+</ResponseField>
+
+<ResponseField name="Version" type="string">
+  The rendered version string. Populated after a `Format` or `String` call.
+</ResponseField>
+
+---
+
+## Version forms
+
+The internal `useForm` field controls which format string is used when rendering. The available constants are:
+
+```go
+const (
+    FormA = "v%d.%d.%d"                  // Standard with v-prefix: v1.2.3
+    FormB = "v%d.%d.%d-alpha.%d"         // Alpha: v1.2.3-alpha.1
+    FormC = "v%d.%d.%d-beta.%d"          // Beta: v1.2.3-beta.1
+    FormD = "v%d.%d.%d-rc.%d"            // RC: v1.2.3-rc.1
+    FormE = "v%d.%d.%d-beta.%d-alpha.%d" // Alpha+Beta: v1.2.3-beta.1-alpha.1
+    FormF = "v%d.%d.%d-preview.%d"       // Preview: v1.2.3-preview.1
+    FormG = "%d.%d.%d"                   // No prefix: 1.2.3
+    FormH = "%d.%d"                      // Two-part: 1.24
+    FormI = "v%d"                        // Major only: v1
+    FormJ = "v%d.%d"                     // Two-part with prefix: v1.0
+)
+```
+
+Forms are selected automatically by bump methods and the parser. You do not need to set them directly.
+
+---
+
+## Supported files
+
+`SupportedFiles` lists the file names that `Parse`, `LoadFile`, and `Save` handle with file-type-specific logic:
+
+```go
+var SupportedFiles = []string{
+    "VERSION",
+    "package.json",
+    "pom.xml",
+    "Chart.yaml",
+    "Dockerfile",
+    "go.mod",
+}
+```
+
+Any file not in this list is handled using the `VERSION` strategy (raw content replacement).
+
+---
+
+## `(*Version).Compare()`
+
+```go
+func (v *Version) Compare(o *Version) int
+```
+
+Compares two `Version` values and returns an integer result.
+
+<ParamField path="o" type="*Version" required>
+  The other `Version` to compare against.
+</ParamField>
+
+<ResponseField name="int" type="int">
+  `1` if `v` is greater than `o`, `-1` if `v` is less than `o`, `0` if they are equal.
+</ResponseField>
+
+### Comparison rules
+
+Comparison proceeds field by field in order: `Major`, `Minor`, `Patch`, then pre-release status.
+
+- A stable release (no pre-release components) is considered **greater** than a pre-release of the same `Major.Minor.Patch`.
+- When both versions are pre-releases, priority order is: `Preview` > `RC` > `Beta` > `Alpha`.
+
+```go
+stable, _ := bump.Parse("v1.0.0")
+alpha, _ := bump.Parse("v1.0.0-alpha.1")
+
+fmt.Println(stable.Compare(alpha)) // 1  (stable > alpha)
+fmt.Println(alpha.Compare(stable)) // -1 (alpha < stable)
+
+v1, _ := bump.Parse("v1.0.0")
+v2, _ := bump.Parse("v1.0.0")
+fmt.Println(v1.Compare(v2)) // 0  (equal)
+```
+
+```go
+rc, _ := bump.Parse("v1.0.0-rc.1")
+beta, _ := bump.Parse("v1.0.0-beta.1")
+
+fmt.Println(rc.Compare(beta)) // 1  (rc > beta among pre-releases)
+```
+
+---
+
+## `(*Version).Validate()`
+
+```go
+func (v *Version) Validate() error
+```
+
+Validates the raw version string against each supported format in priority order. Unlike `Parse()`, which populates the struct's fields, `Validate()` checks the raw content against all known formats without modifying any parsed state.
+
+<ResponseField name="error" type="error">
+  Non-nil if the raw version string does not match any recognized format.
+</ResponseField>
+
+```go
+v := bump.New()
+v.SetRaw([]byte("v1.2.3"))
+if err := v.Validate(); err != nil {
+    log.Fatal("invalid version:", err)
+}
+// v.Validate() returns nil — the format is recognized
+```
+
+<Note>
+  `Validate()` operates on the raw byte content set by `SetRaw()` or `LoadFile()`. Call it before `Parse()` if you want to check whether a version string is valid without committing to a full parse.
+</Note>

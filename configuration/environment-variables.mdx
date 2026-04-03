@@ -1,0 +1,94 @@
+---
+title: 'Environment variables'
+description: 'Configure the default runtime behavior of bump using environment variables.'
+---
+
+All environment variables that control bump's behavior are listed below. You can view the current values at any time by running:
+
+```bash
+bump -env
+```
+
+Example output:
+
+```text
+BUMP_NO_PREVIEW=false
+BUMP_ALWAYS_FIX=false
+BUMP_DEFAULT_INPUT=VERSION
+BUMP_NO_ALPHA=false
+BUMP_NO_BETA=false
+BUMP_NO_ALPHA_BETA=false
+BUMP_NO_RC=false
+BUMP_INIT_ON_NOT_FOUND=false
+BUMP_ALWAYS_WRITE=false
+BUMP_NEVER_FIX=false
+```
+
+## Variables
+
+<ParamField path="BUMP_DEFAULT_INPUT" type="string" default="VERSION">
+  Path to the default input file used when `-in` is not provided. Set this to a project-level `VERSION` file or any other supported file type so you don't have to pass `-in` on every invocation.
+</ParamField>
+
+<ParamField path="BUMP_ALWAYS_WRITE" type="boolean" default="false">
+  When `true`, bump always writes the updated version back to the input file, as if `-write` were passed on every command.
+</ParamField>
+
+<ParamField path="BUMP_INIT_ON_NOT_FOUND" type="boolean" default="false">
+  When `true`, bump creates the input `VERSION` file with an initial value of `v0.0.0-beta.1` if it does not already exist. Equivalent to passing `-init` on every command.
+</ParamField>
+
+<ParamField path="BUMP_NO_ALPHA_BETA" type="boolean" default="false">
+  When `true`, both `-alpha` and `-beta` flags have no effect. Use this to prevent pre-release alpha/beta versions from appearing in your pipeline history.
+</ParamField>
+
+<ParamField path="BUMP_NO_ALPHA" type="boolean" default="false">
+  When `true`, the `-alpha` flag has no effect.
+</ParamField>
+
+<ParamField path="BUMP_NO_BETA" type="boolean" default="false">
+  When `true`, the `-beta` flag has no effect.
+</ParamField>
+
+<ParamField path="BUMP_NO_RC" type="boolean" default="false">
+  When `true`, the `-rc` flag has no effect.
+</ParamField>
+
+<ParamField path="BUMP_NO_PREVIEW" type="boolean" default="false">
+  When `true`, the `-preview` flag has no effect.
+</ParamField>
+
+<ParamField path="BUMP_ALWAYS_FIX" type="boolean" default="false">
+  When `true`, bump always attempts to fix a malformed version string before parsing, as if `-fix` were passed on every command.
+</ParamField>
+
+<ParamField path="BUMP_NEVER_FIX" type="boolean" default="false">
+  When `true`, the `-fix` flag is ignored and no auto-fix is ever applied, even if `BUMP_ALWAYS_FIX` would otherwise enable it.
+</ParamField>
+
+<Warning>
+  `BUMP_ALWAYS_FIX` and `BUMP_NEVER_FIX` cannot be used together. If both are set to `true`, bump will exit with an error.
+</Warning>
+
+## Shell examples
+
+```bash
+# Always write changes back to the input file
+export BUMP_ALWAYS_WRITE=true
+
+# Use a custom default input file path
+export BUMP_DEFAULT_INPUT=/path/to/my/VERSION
+
+# Prevent alpha and beta pre-release bumps globally
+export BUMP_NO_ALPHA_BETA=true
+
+# Automatically initialize a missing VERSION file
+export BUMP_INIT_ON_NOT_FOUND=true
+
+# Always fix malformed version strings
+export BUMP_ALWAYS_FIX=true
+```
+
+<Tip>
+  Add your environment variable exports to your shell profile (e.g., `~/.bashrc` or `~/.zshrc`) to persist them across sessions, or set them in your CI/CD environment configuration for pipeline-wide defaults.
+</Tip>

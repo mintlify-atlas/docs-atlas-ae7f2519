@@ -1,0 +1,138 @@
+---
+title: "Formatting and saving"
+description: "Methods for rendering and persisting versions."
+---
+
+These methods control how a `Version` is rendered as a string and how it is written back to a file.
+
+---
+
+## `(*Version).String()`
+
+```go
+func (v *Version) String() string
+```
+
+Returns the formatted version string, always with a `v` prefix. Implements `fmt.Stringer`. Thread-safe — acquires a read lock internally.
+
+```go
+v, _ := bump.Parse("v1.2.3")
+fmt.Println(v.String()) // v1.2.3
+```
+
+---
+
+## `(*Version).Format()`
+
+```go
+func (v *Version) Format(withPrefix bool) string
+```
+
+Returns the formatted version string with control over the `v` prefix. Respects the current form (FormA through FormJ) chosen by parse or bump operations.
+
+<ParamField path="withPrefix" type="bool" required>
+  When `true`, prepends `v` to the version string. When `false`, omits the prefix — useful for `package.json`, `go.mod`, and other files that expect bare version numbers.
+</ParamField>
+
+<ResponseField name="string" type="string">
+  The formatted version string.
+</ResponseField>
+
+```go
+v, _ := bump.Parse("v1.2.3-alpha.4")
+fmt.Println(v.Format(true))  // v1.2.3-alpha.4
+fmt.Println(v.Format(false)) // 1.2.3-alpha.4
+```
+
+<Note>
+  For `go.mod` files, the format is always set to FormG (`%d.%d.%d`) automatically, regardless of the `withPrefix` argument.
+</Note>
+
+---
+
+## `(*Version).Raw()`
+
+```go
+func (v *Version) Raw() string
+```
+
+Returns the original raw file contents as a string. This is the unmodified byte content loaded by `LoadFile` or `SetRaw`, before any parsing or bumping.
+
+```go
+v := bump.New()
+_ = v.LoadFile("VERSION")
+fmt.Println(v.Raw()) // e.g. "v1.2.3"
+```
+
+---
+
+## `(*Version).NoPrefix()`
+
+```go
+func (v *Version) NoPrefix() bool
+```
+
+Returns `true` if the version should be rendered without a `v` prefix. Checked internally by `String()` and `Format()`. Thread-safe.
+
+<ResponseField name="bool" type="bool">
+  `true` if the `v` prefix is suppressed; `false` otherwise.
+</ResponseField>
+
+---
+
+## `(*Version).Save()`
+
+```go
+func (v *Version) Save(path string) error
+```
+
+Writes the updated version back to a file, dispatching based on the file's base name. The file must have been loaded and parsed before calling `Save`.
+
+<ParamField path="path" type="string" required>
+  The path to write to. The base name determines the save strategy.
+</ParamField>
+
+<ResponseField name="error" type="error">
+  Non-nil if the file cannot be written or the content cannot be marshalled.
+</ResponseField>
+
+### Save strategies by file type
+
+| File           | Strategy                                                                 |
+|----------------|--------------------------------------------------------------------------|
+| `VERSION`      | Writes the formatted version string directly                             |
+| `package.json` | Updates `"version"` key, re-marshals as indented JSON                   |
+| `Chart.yaml`   | Updates `"version"` key, re-marshals as YAML                            |
+| `Dockerfile`   | Replaces `LABEL version="..."` using regex                               |
+| `go.mod`       | Replaces the `go #.#[.#]` directive using regex                         |
+| `pom.xml`      | Replaces `<version>` inside `<project>` using regex                     |
+| _(other)_      | Falls back to the `VERSION` strategy                                     |
+
+<Warning>
+  Saving `package.json` or `Chart.yaml` requires the file to have been parsed first. `Save` will return an error if the parsed map is nil.
+</Warning>
+
+### Example
+
+```go
+v := bump.New()
+_ = v.LoadFile("package.json")
+_ = v.Parse()
+v.BumpPatch()
+if err := v.Save("package.json"); err != nil {
+    log.Fatal(err)
+}
+```
+
+### Using `ParseFile` as a shorthand
+
+```go
+v := bump.New()
+if err := v.ParseFile("Chart.yaml"); err != nil {
+    log.Fatal(err)
+}
+v.BumpMinor()
+if err := v.Save("Chart.yaml"); err != nil {
+    log.Fatal(err)
+}
+```

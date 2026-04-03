@@ -1,0 +1,103 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Bump",
+  "projectDescription": "A CLI tool for bumping semantic version strings across VERSION files, package.json, go.mod, Dockerfile, Chart.yaml, and pom.xml.",
+  "theme": "palm",
+  "primaryColor": "#2D7DD2",
+  "lightColor": "#EBF4FF",
+  "darkColor": "#1A4F8A",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Command Reference",
+            "pages": [
+              "commands/bump-operations",
+              "commands/file-options",
+              "commands/output-flags"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment-variables",
+              "configuration/supported-files"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/ci-cd-pipelines",
+              "guides/version-formats",
+              "guides/fixing-versions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Go Library",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "library/overview",
+              "library/getting-started"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "library/api/new-parse-create",
+              "library/api/bump-methods",
+              "library/api/format-save",
+              "library/api/version-struct"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Bump major, minor, patch, alpha, beta, RC, and preview version components",
+    "Supports multiple file formats: VERSION, package.json, go.mod, Dockerfile, Chart.yaml, pom.xml",
+    "Fix malformed version strings automatically with -fix flag",
+    "JSON output mode for pipeline integration",
+    "Environment variable overrides for CI/CD automation",
+    "Dry-run by default; -write flag commits changes to file",
+    "Exit code 0/1 for pipeline flow control",
+    "Cross-platform binaries: macOS (arm64/amd64), Linux (arm64/amd64), Windows"
+  ],
+  "publicApiSurface": [
+    "bump.New() *Version",
+    "bump.Parse(version string) (*Version, error)",
+    "bump.Create(version, path string) (*Version, error)",
+    "(*Version).LoadFile(path string) error",
+    "(*Version).ParseFile(path string) error",
+    "(*Version).Parse() error",
+    "(*Version).Fix() error",
+    "(*Version).BumpMajor()",
+    "(*Version).BumpMinor()",
+    "(*Version).BumpPatch()",
+    "(*Version).BumpAlpha()",
+    "(*Version).BumpBeta()",
+    "(*Version).BumpRC()",
+    "(*Version).BumpPreview()",
+    "(*Version).Format(withPrefix bool) string",
+    "(*Version).Save(path string) error",
+    "(*Version).Compare(o *Version) int",
+    "(*Version).String() string",
+    "(*Version).SetRaw(raw []byte)",
+    "(*Version).NoPrefix() bool",
+    "(*Version).Raw() string"
+  ]
+}

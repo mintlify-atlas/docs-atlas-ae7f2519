@@ -1,0 +1,89 @@
+---
+title: "Fixing malformed versions"
+description: "How bump detects and fixes malformed version strings"
+---
+
+Version files can become malformed over time — a missing `v` prefix, a two-part version string, or an empty file. The `-fix` flag tells bump to repair these issues before parsing.
+
+## What -fix repairs
+
+| Problem | Before | After |
+|---|---|---|
+| Empty file | `""` | `v0.0.1` |
+| Three-part without prefix | `1.2.3` | `v1.2.3` |
+| Two-part without prefix | `1.25` | `v1.25.0` |
+| Already-valid version | `v1.2.3` | `v1.2.3` (no change) |
+
+If none of these fixable patterns match, bump falls back to re-parsing the content as-is.
+
+## Using -fix
+
+<Steps>
+  <Step title="Check the current version">
+    Run `-check` to see what bump reads from the file. If it exits with code `1`, the version may be malformed.
+
+    ```bash
+    bump -check
+    ```
+  </Step>
+  <Step title="Preview the fix">
+    Run `-fix -check` to see what the repaired version would be without saving it.
+
+    ```bash
+    # File contains "1.25" (malformed two-part version)
+    bump -fix -check
+    # Output: v1.25.0
+    ```
+  </Step>
+  <Step title="Apply and save the fix">
+    Add `-write` to save the repaired version back to the file.
+
+    ```bash
+    bump -fix -write
+    # Output: Fixed and saved version v1.25.0 to VERSION
+    ```
+  </Step>
+</Steps>
+
+## The hint message
+
+When bump cannot parse a version and `-fix` was not used, it checks whether a fix would have helped. If so, it prints a hint to stderr:
+
+```
+Hint: the version string may be fixable with the -fix flag.
+```
+
+This hint does not appear when `-fix` is already active, or when the file is not fixable.
+
+## Initializing a version file
+
+Use `-init` to create a `VERSION` file if one does not already exist.
+
+```bash
+bump -init
+# Creates VERSION containing: v0.0.0-beta.1
+```
+
+To initialize with a specific version, combine `-init` with `-parse`:
+
+```bash
+bump -init -parse v1.0.0
+# Creates VERSION containing: v1.0.0
+```
+
+`-init` has no effect if the file already exists. It is equivalent to setting the `BUMP_INIT_ON_NOT_FOUND` environment variable to `true`.
+
+## Environment variables
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `BUMP_ALWAYS_FIX` | `bool` | `false` | Applies `-fix` automatically on every invocation. |
+| `BUMP_NEVER_FIX` | `bool` | `false` | Prevents `-fix` from taking effect, even if the flag is passed. |
+
+<Warning>
+`BUMP_ALWAYS_FIX` and `BUMP_NEVER_FIX` cannot be set to `true` simultaneously. bump will exit with an error if both are enabled at the same time.
+</Warning>
+
+<Tip>
+Add `bump -fix -write` to a bootstrap or setup script to ensure version files are always in a valid state before any bump operations run.
+</Tip>

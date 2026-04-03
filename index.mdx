@@ -1,97 +1,76 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Bump — Semantic Version Management"
+description: "Bump your versions from the command line. Works with VERSION files, package.json, go.mod, Dockerfile, Chart.yaml, and pom.xml."
 ---
 
-## Setting up
+Bump is a fast, reliable CLI tool for incrementing semantic version strings. Run it in your terminal or drop it into any CI/CD pipeline. It reads your version file, bumps the component you specify, and optionally writes the result back — no scripts, no sed commands, no surprises.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install via `go install` or download a pre-built binary for your platform.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Run your first version bump in under a minute.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Command Reference" icon="terminal" href="/commands/bump-operations">
+    Every flag documented with examples and default values.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="CI/CD Pipelines" icon="circle-play" href="/guides/ci-cd-pipelines">
+    Automate version bumps in GitHub Actions and other pipelines.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## How it works
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Install bump">
+    ```bash
+    go install github.com/andreimerlescu/bump@latest
+    ```
+  </Step>
+  <Step title="Check your current version">
+    ```bash
+    bump -check
+    # v1.0.2
+    ```
+  </Step>
+  <Step title="Bump the version">
+    ```bash
+    bump -patch
+    # Bumped v1.0.2 → v1.0.3
+    ```
+  </Step>
+  <Step title="Write it back to the file">
+    ```bash
+    bump -patch -write
+    # Bumped v1.0.2 → v1.0.3 (saved to VERSION)
+    ```
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Key features
 
-## Need inspiration?
+<CardGroup cols={2}>
+  <Card title="Multiple bump types" icon="arrow-up">
+    Bump `major`, `minor`, `patch`, `alpha`, `beta`, `rc`, or `preview` — individually or in combination.
+  </Card>
+  <Card title="Multi-file support" icon="files">
+    Works natively with `VERSION`, `package.json`, `go.mod`, `Dockerfile`, `Chart.yaml`, and `pom.xml`.
+  </Card>
+  <Card title="Safe by default" icon="shield-check">
+    Dry-run mode is the default. Changes are only written when you pass `-write`.
+  </Card>
+  <Card title="Pipeline-friendly" icon="code-branch">
+    Returns exit code `0` on success and `1` on error. Supports JSON output with `-json`.
+  </Card>
+  <Card title="Environment controls" icon="sliders">
+    Disable pre-release bump types, set default input files, and auto-write via environment variables.
+  </Card>
+  <Card title="Go library" icon="golang" href="/library/overview">
+    Use the `bump` package directly in your Go programs to parse, compare, and bump versions.
+  </Card>
+</CardGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  Bump is safe to use in automated pipelines. It will exit with a non-zero code on any error, making it straightforward to integrate into Makefiles, GitHub Actions, and shell scripts.
+</Note>

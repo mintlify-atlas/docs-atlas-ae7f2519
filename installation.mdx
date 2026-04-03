@@ -1,0 +1,91 @@
+---
+title: "Installation"
+description: "Install bump via go install or download a pre-built binary for your platform."
+---
+
+## Using go install
+
+If you have Go installed, this is the fastest way to get bump:
+
+```bash
+go install github.com/andreimerlescu/bump@latest
+```
+
+Verify the installation:
+
+```bash
+which bump
+```
+
+## Pre-built binaries
+
+Download a pre-built binary directly if you do not have Go installed or prefer not to compile from source.
+
+<CodeGroup>
+
+```bash macOS Silicon (ARM64)
+[ ! -d ~/bin ] && mkdir -p ~/bin
+curl -sL https://github.com/andreimerlescu/bump/releases/download/v1.0.0/bump-darwin-arm64 -o ~/bin/bump
+chmod +x ~/bin/bump
+```
+
+```bash macOS Intel (amd64)
+[ ! -d ~/bin ] && mkdir -p ~/bin
+curl -sL https://github.com/andreimerlescu/bump/releases/download/v1.0.0/bump-darwin-amd64 -o ~/bin/bump
+chmod +x ~/bin/bump
+```
+
+```bash Linux (amd64)
+[ ! -d ~/bin ] && mkdir -p ~/bin
+curl -sL https://github.com/andreimerlescu/bump/releases/download/v1.0.0/bump-linux-amd64 -o ~/bin/bump
+chmod +x ~/bin/bump
+```
+
+```bash Windows (bash)
+[ ! -d ~/bin ] && mkdir -p ~/bin
+curl -sL https://github.com/andreimerlescu/bump/releases/download/v1.0.0/bump.exe -o ~/bin/bump.exe
+```
+
+</CodeGroup>
+
+<Note>
+  The `~/bin` directory must be on your `PATH`. If it is not, add `export PATH="$HOME/bin:$PATH"` to your shell profile (`.bashrc`, `.zshrc`, etc.) and restart your terminal.
+</Note>
+
+## Verify the installation
+
+After installing, confirm bump is available and working:
+
+```bash
+which bump
+```
+
+```bash
+bump -v
+```
+
+You should see the current version printed to stdout, for example:
+
+```
+v1.0.7
+```
+
+## Build from source
+
+Clone the repository and build for your target platform:
+
+```bash
+git clone git@github.com:andreimerlescu/bump.git
+cd bump
+make all
+```
+
+Available build targets:
+
+```bash
+make darwin-arm64
+make darwin-amd64
+make linux-arm64
+make linux-amd64
+make windows-amd64
+```

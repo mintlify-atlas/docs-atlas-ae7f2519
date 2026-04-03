@@ -1,0 +1,171 @@
+---
+title: "Constructors"
+description: "Package-level functions for creating Version instances."
+---
+
+The `bump` package provides three constructor functions for creating `Version` instances, plus a set of methods for loading and preparing version data.
+
+## `bump.New()`
+
+```go
+func New() *Version
+```
+
+Returns a new, empty `Version` with internal safety initialized — the mutex (`sync.RWMutex`) and parsed map are both ready to use. Call `LoadFile` or `SetRaw` after `New()` to supply version content before parsing.
+
+**Returns**
+
+<ResponseField name="*Version" type="*Version" required>
+  A pointer to a new, zero-value `Version` struct with concurrency safety initialized.
+</ResponseField>
+
+```go
+v := bump.New()
+// v is ready for LoadFile or SetRaw
+```
+
+---
+
+## `bump.Parse()`
+
+```go
+func Parse(version string) (*Version, error)
+```
+
+Parses a version string and returns a fully populated `Version` or an error.
+
+**Parameters**
+
+<ParamField path="version" type="string" required>
+  The version string to parse (e.g. `"v1.2.3-alpha.4"`).
+</ParamField>
+
+**Returns**
+
+<ResponseField name="*Version" type="*Version">
+  A pointer to the parsed `Version` struct, or `nil` on error.
+</ResponseField>
+
+<ResponseField name="error" type="error">
+  Non-nil if the version string could not be parsed.
+</ResponseField>
+
+```go
+v, err := bump.Parse("v1.2.3-alpha.4")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(v.Major, v.Minor, v.Patch, v.Alpha) // 1 2 3 4
+```
+
+---
+
+## `bump.Create()`
+
+```go
+func Create(version, path string) (*Version, error)
+```
+
+Parses the version string and writes it to the given file path in one step. Equivalent to calling `Parse` followed by `Save`.
+
+**Parameters**
+
+<ParamField path="version" type="string" required>
+  The version string to parse (e.g. `"v1.0.0"`).
+</ParamField>
+
+<ParamField path="path" type="string" required>
+  The file path to write the version to (e.g. `"/tmp/VERSION"`).
+</ParamField>
+
+**Returns**
+
+<ResponseField name="*Version" type="*Version">
+  A pointer to the parsed and saved `Version` struct, or `nil` on error.
+</ResponseField>
+
+<ResponseField name="error" type="error">
+  Non-nil if parsing or saving the version fails.
+</ResponseField>
+
+```go
+v, err := bump.Create("v1.0.0", filepath.Join(os.TempDir(), "VERSION"))
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+---
+
+## Loading and setting raw content
+
+### `(*Version).LoadFile()`
+
+```go
+func (v *Version) LoadFile(path string) error
+```
+
+Reads a file's contents into the internal `raw` field and stores the path. Does **not** parse — call `Parse()` afterwards to populate the version fields.
+
+Supports all file types: `VERSION`, `package.json`, `go.mod`, `Dockerfile`, `Chart.yaml`, `pom.xml`.
+
+<ParamField path="path" type="string" required>
+  Path to the version file to read.
+</ParamField>
+
+<ResponseField name="error" type="error">
+  Non-nil if the file cannot be read.
+</ResponseField>
+
+```go
+v := bump.New()
+if err := v.LoadFile(filepath.Join(".", "VERSION")); err != nil {
+    log.Fatal(err)
+}
+if err := v.Parse(); err != nil {
+    log.Fatal(err)
+}
+```
+
+### `(*Version).ParseFile()`
+
+```go
+func (v *Version) ParseFile(path string) error
+```
+
+Combines `LoadFile` and `Parse` into a single call. Use this when you want to load and parse in one step.
+
+<ParamField path="path" type="string" required>
+  Path to the version file to load and parse.
+</ParamField>
+
+<ResponseField name="error" type="error">
+  Non-nil if loading or parsing fails.
+</ResponseField>
+
+```go
+v := bump.New()
+if err := v.ParseFile("package.json"); err != nil {
+    log.Fatal(err)
+}
+```
+
+### `(*Version).SetRaw()`
+
+```go
+func (v *Version) SetRaw(raw []byte)
+```
+
+Overwrites the internal raw byte content without touching any parsed fields. Use this to inject version bytes before calling `Parse()`.
+
+<ParamField path="raw" type="[]byte" required>
+  The raw byte content to store (e.g. `[]byte("v2.0.0")`).
+</ParamField>
+
+```go
+v := bump.New()
+v.SetRaw([]byte("v2.0.0"))
+if err := v.Parse(); err != nil {
+    log.Fatal(err)
+}
+```

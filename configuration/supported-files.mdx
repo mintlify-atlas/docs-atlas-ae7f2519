@@ -1,0 +1,219 @@
+---
+title: 'Supported files'
+description: 'The six file types that bump can read and update versions in.'
+---
+
+bump understands the structure of six file types and knows exactly which field to update in each one. Pass any of them to the `-in` flag to target it directly.
+
+<Note>
+  The `-in` flag defaults to `./VERSION` in the current working directory when not specified.
+</Note>
+
+<Tip>
+  Set `BUMP_DEFAULT_INPUT` to change the default input file for all bump invocations without needing to pass `-in` every time.
+</Tip>
+
+## File types
+
+<Tabs>
+  <Tab title="VERSION">
+    The entire file contents are replaced with the new version string. This is the simplest and most direct format.
+
+    ```bash
+    bump -patch -in VERSION -write
+    ```
+
+    **Before:**
+
+    ```text
+    v1.2.3
+    ```
+
+    **After:**
+
+    ```text
+    v1.2.4
+    ```
+
+    Any valid version format is supported (see [version formats](/guides/version-formats)).
+  </Tab>
+
+  <Tab title="package.json">
+    The `"version"` key is parsed from JSON and updated in place. All other keys and formatting are preserved.
+
+    ```bash
+    bump -patch -in package.json -write
+    ```
+
+    **Before:**
+
+    ```json
+    {
+      "name": "my-app",
+      "version": "1.2.3",
+      "description": "My application"
+    }
+    ```
+
+    **After:**
+
+    ```json
+    {
+      "name": "my-app",
+      "version": "1.2.4",
+      "description": "My application"
+    }
+    ```
+
+    <Note>
+      Versions in `package.json` are written without a `v` prefix, following npm convention.
+    </Note>
+  </Tab>
+
+  <Tab title="pom.xml">
+    The first `<version>` tag inside the `<project>` element is updated using a regex match. Other `<version>` tags in dependency blocks are not affected.
+
+    ```bash
+    bump -minor -in pom.xml -write
+    ```
+
+    **Before:**
+
+    ```xml
+    <project>
+      <groupId>com.example</groupId>
+      <artifactId>my-app</artifactId>
+      <version>1.2.3</version>
+    </project>
+    ```
+
+    **After:**
+
+    ```xml
+    <project>
+      <groupId>com.example</groupId>
+      <artifactId>my-app</artifactId>
+      <version>1.3.0</version>
+    </project>
+    ```
+
+    Only the first `<version>` tag within `<project>` is matched and replaced.
+  </Tab>
+
+  <Tab title="Chart.yaml">
+    The `version` key is parsed from YAML and updated in place. The `appVersion` key is not modified.
+
+    ```bash
+    bump -patch -in Chart.yaml -write
+    ```
+
+    **Before:**
+
+    ```yaml
+    apiVersion: v2
+    name: my-chart
+    description: A Helm chart
+    type: application
+    version: 1.2.3
+    appVersion: "1.0.0"
+    ```
+
+    **After:**
+
+    ```yaml
+    apiVersion: v2
+    name: my-chart
+    description: A Helm chart
+    type: application
+    version: 1.2.4
+    appVersion: "1.0.0"
+    ```
+
+    <Note>
+      Helm chart versions are written without a `v` prefix per Helm convention.
+    </Note>
+  </Tab>
+
+  <Tab title="Dockerfile">
+    The `LABEL version=` or `LABEL org.label-schema.version=` directive is updated using a regex match. Both label forms are supported.
+
+    ```bash
+    bump -major -in Dockerfile -write
+    ```
+
+    **Before:**
+
+    ```dockerfile
+    FROM ubuntu:22.04
+
+    LABEL version="v1.0.0"
+    # or
+    LABEL org.label-schema.version="v1.0.0"
+    ```
+
+    **After:**
+
+    ```dockerfile
+    FROM ubuntu:22.04
+
+    LABEL version="v2.0.0"
+    # or
+    LABEL org.label-schema.version="v2.0.0"
+    ```
+
+    The version value must be quoted in the Dockerfile for the regex to match. The `v` prefix is preserved when writing.
+  </Tab>
+
+  <Tab title="go.mod">
+    The `go #.#` directive line is updated using a regex match. This controls the minimum Go toolchain version declared in the module.
+
+    ```bash
+    bump -minor -in go.mod -write
+    ```
+
+    **Before:**
+
+    ```text
+    module github.com/example/my-module
+
+    go 1.22
+
+    require (
+      ...
+    )
+    ```
+
+    **After:**
+
+    ```text
+    module github.com/example/my-module
+
+    go 1.23
+
+    require (
+      ...
+    )
+    ```
+
+    <Note>
+      When saving `go.mod`, bump reads the current Go version from [igo](https://github.com/andreimerlescu/igo), a golang version manager, by reading `~/go/version`. This ensures the `go` directive reflects the version installed on your system. If `igo` is not installed, the save operation will fail.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Using `-in` to target a file
+
+Pass the file name (or full path) to `-in` to select the input file:
+
+```bash
+# Use a VERSION file in the current directory (default)
+bump -patch -write
+
+# Use a package.json in the current directory
+bump -patch -in package.json -write
+
+# Use a file at a specific path
+bump -patch -in /path/to/my/project/Chart.yaml -write
+```
+
+bump detects the file type from the **base filename** (e.g., `Chart.yaml`, not its full path), so the file must use one of the six supported names exactly as listed above.

@@ -1,0 +1,102 @@
+---
+title: "Go library overview"
+description: Using the bump package programmatically in Go
+---
+
+The `bump` tool is also available as a Go package. You can import it directly into your own Go programs to parse, manipulate, and save version strings without shelling out to the CLI.
+
+## Import
+
+```go
+import "github.com/andreimerlescu/bump/bump"
+```
+
+## Installation
+
+```bash
+go get github.com/andreimerlescu/bump@latest
+```
+
+## Public API
+
+The package exposes a `Version` struct and the following public functions and methods, grouped by category.
+
+### Package-level constructors
+
+| Signature | Description |
+|---|---|
+| `bump.New() *Version` | Returns a zero-value `Version` with internal fields initialized. |
+| `bump.Parse(version string) (*Version, error)` | Parses a version string and returns a ready-to-use `*Version`. |
+| `bump.Create(version, path string) (*Version, error)` | Parses a version string, writes it to `path`, and returns the `*Version`. |
+
+### Loading and parsing
+
+| Signature | Description |
+|---|---|
+| `(*Version).LoadFile(path string) error` | Reads the file at `path` into the struct's raw buffer. |
+| `(*Version).ParseFile(path string) error` | Calls `LoadFile` then `Parse` in one step. |
+| `(*Version).Parse() error` | Parses the raw buffer currently held by the struct. |
+| `(*Version).SetRaw(raw []byte)` | Replaces the raw buffer without parsing. |
+
+### Bumping
+
+Each bump method increments the corresponding version component and resets all lower-precedence components to zero.
+
+| Signature | Resets |
+|---|---|
+| `(*Version).BumpMajor()` | Minor, Patch, RC, Alpha, Beta, Preview → 0 |
+| `(*Version).BumpMinor()` | Patch, RC, Alpha, Beta, Preview → 0 |
+| `(*Version).BumpPatch()` | RC, Alpha, Beta, Preview → 0 |
+| `(*Version).BumpRC()` | Alpha, Beta, Preview → 0 |
+| `(*Version).BumpAlpha()` | — |
+| `(*Version).BumpBeta()` | — |
+| `(*Version).BumpPreview()` | Patch, Alpha, Beta, RC → 0 |
+
+### Fixing
+
+| Signature | Description |
+|---|---|
+| `(*Version).Fix() error` | Attempts to correct a malformed raw version value. Falls back to `v0.0.1` if the raw buffer is empty. |
+
+### Output
+
+| Signature | Description |
+|---|---|
+| `(*Version).Format(withPrefix bool) string` | Returns a formatted version string. Pass `true` for a `v` prefix, `false` for bare semver (e.g., for `package.json`). |
+| `(*Version).String() string` | Returns the version with a `v` prefix. Equivalent to `Format(true)`. |
+| `(*Version).Raw() string` | Returns the original raw bytes as a string, unmodified. |
+| `(*Version).NoPrefix() bool` | Reports whether the `v` prefix is suppressed. |
+
+### Persistence
+
+| Signature | Description |
+|---|---|
+| `(*Version).Save(path string) error` | Writes the current version back to `path`. Automatically handles `VERSION`, `package.json`, `Chart.yaml`, `Dockerfile`, `go.mod`, and `pom.xml` formats. |
+
+### Comparison and validation
+
+| Signature | Description |
+|---|---|
+| `(*Version).Compare(o *Version) int` | Returns `1` if the receiver is greater, `-1` if lesser, `0` if equal. Stable releases rank higher than pre-releases at the same major/minor/patch. |
+| `(*Version).Validate() error` | Validates the raw version content against all recognized formats. Returns non-nil if the format is unrecognized. |
+
+<Note>
+The `Version` struct embeds a `sync.RWMutex` and is safe for concurrent use. All public methods acquire the appropriate read or write lock before accessing shared fields.
+</Note>
+
+## API reference
+
+<CardGroup cols={2}>
+  <Card title="Constructors" icon="hammer" href="/library/api/new-parse-create">
+    `New`, `Parse`, and `Create` — how to initialize a `Version`.
+  </Card>
+  <Card title="Bump methods" icon="arrow-up" href="/library/api/bump-methods">
+    Increment major, minor, patch, alpha, beta, RC, and preview.
+  </Card>
+  <Card title="Formatting & saving" icon="floppy-disk" href="/library/api/format-save">
+    `Format`, `String`, `Save`, and supported file formats.
+  </Card>
+  <Card title="Version struct" icon="brackets-curly" href="/library/api/version-struct">
+    Fields, locking behavior, and the `Compare` method.
+  </Card>
+</CardGroup>
